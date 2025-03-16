@@ -103,7 +103,7 @@ def main():
                     annotated_img = draw_bounding_boxes(img_np, detections)
 
                     # Display result
-                    st.image(annotated_img, caption="Detected Objects", use_container_width=True)
+                    st.image(annotated_img, caption="Detected Objects")
 
                     # Save results
                     if output_folder and os.path.exists(output_folder):
