@@ -90,6 +90,7 @@ def main():
 
             if image_paths:
                 selected_image = image_paths[st.session_state['image_idx']]
+                #print(selected_image)
 
                 if selected_image:
                     img = Image.open(selected_image).convert("RGB")
@@ -122,11 +123,6 @@ def main():
                         output_image_path = os.path.join(images_output_folder, image_name)
                         label_file_path = os.path.join(labels_output_folder, f"{os.path.splitext(image_name)[0]}.txt")
 
-                        # Save detections
-                        #results_text = [f"Class {d[5]}: {d[4]:.2f}" for d in detections]
-                        #with open(label_file_path, "w") as f:
-                        #    f.write("\n".join(results_text))
-
                         # Save Image & Labels
                         _, left_btn, right_btn, _ = st.columns([1, 1, 1, 1])
                         with left_btn:
@@ -141,7 +137,11 @@ def main():
 
                             st.success(f"Image saved at {output_image_path}")
                             st.success(f"Labels saved at {label_file_path}")
+
                             st.session_state['image_idx'] += 1
+                            if st.session_state['image_idx'] >= len(image_paths):
+                                st.session_state['finished'] = True
+                            st.rerun()
                         if bad:
                             # Ensure the for_manual folder exists
                             for_manual_folder = os.path.join(output_folder, "for_manual")
@@ -149,14 +149,13 @@ def main():
 
                             shutil.move(image_path, os.path.join(for_manual_folder, image_name))
                             st.success(f"Moved {image_name} to 'for_manual' folder")
-                            st.session_state['image_idx'] += 1
-
-                        if st.session_state['image_idx'] >= len(image_paths):
-                            st.session_state['finished'] = True
-
+                            
+                            st.session_state['image_idx'] += 1                            
+                            if st.session_state['image_idx'] >= len(image_paths):
+                                st.session_state['finished'] = True
+                            st.rerun()
                     else:
                         st.error("Please enter a valid output folder path.")
-
             else:
                 st.error("No valid images found in the provided folder.")
         else:
