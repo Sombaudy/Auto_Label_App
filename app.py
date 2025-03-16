@@ -49,12 +49,12 @@ def process_yolo_output(results, img_shape, conf_threshold=0.5):
 # Function to save labels in YOLO format
 def save_labels(detections, label_file_path, img_width, img_height):
     with open(label_file_path, "w") as f:
-        for _, _, _, _, confidence, class_id in detections:
+        for x1, y1, x2, y2, confidence, class_id in detections:
             # Calculate normalized coordinates and dimensions
-            x_center = (_ + _ + _)/2 / img_width  # Normalize x_center
-            y_center = (_ + _ + _)/2 / img_height  # Normalize y_center
-            width = _ / img_width  # Normalize width
-            height = _ / img_height  # Normalize height
+            x_center = (x1 + x2) / 2 / img_width  # Normalize x_center
+            y_center = (y1 + y2)/2 / img_height  # Normalize y_center
+            width = (x2 - x1) / img_width  # Normalize width
+            height = (y2 - y1) / img_height  # Normalize height
             # Write in YOLO format
             f.write(f"{class_id} {x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f}\n")
 
