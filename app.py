@@ -7,9 +7,16 @@ from PIL import Image
 from ultralytics import YOLO  # Import YOLO from ultralytics
 
 # Load YOLO Model using Ultralytics
+@st.cache_resource
 def load_model(model_path):
     model = YOLO(model_path)  # Load the YOLO model from the provided path
     return model
+
+# Load the Images
+@st.cache_data
+def load_images(image_folder):
+    image_paths = [os.path.join(image_folder, f) for f in os.listdir(image_folder) if f.endswith(('.jpg', '.jpeg', '.png'))]
+    return image_paths
 
 # Preprocess Image for YOLO Model (resize and normalize)
 def preprocess_image(img):
@@ -75,10 +82,12 @@ if model_path and os.path.exists(model_path):
 
     # Load images from folder
     if image_folder and os.path.exists(image_folder):
-        image_paths = [os.path.join(image_folder, f) for f in os.listdir(image_folder) if f.endswith(('.jpg', '.jpeg', '.png'))]
+        image_paths = load_images(image_folder)
+        if 'image_idx' not in st.session_state:
+            st.session_state['image_idx'] = 0
 
         if image_paths:
-            selected_image = st.selectbox("Select Image", image_paths)
+            selected_image = image_paths[st.session_state['image_idx']]
 
             if selected_image:
                 img = Image.open(selected_image).convert("RGB")
@@ -123,6 +132,7 @@ if model_path and os.path.exists(model_path):
                         st.success(f"Image saved at {output_image_path}")
                         st.success(f"Labels saved at {label_file_path}")
                         save_labels(detections, label_file_path, img.width, img.height)
+                        st.session_state['image_idx'] += 1
 
                     if st.button("Bad Result"):
                         # Ensure the for_manual folder exists
@@ -131,6 +141,7 @@ if model_path and os.path.exists(model_path):
 
                         shutil.move(image_path, os.path.join(for_manual_folder, image_name))
                         st.success(f"Moved {image_name} to 'for_manual' folder")
+                        st.session_state['image_idx'] += 1
 
                 else:
                     st.error("Please enter a valid output folder path.")
