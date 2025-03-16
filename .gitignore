@@ -1,3 +1,9 @@
 *.onnx
 *.jpg
 *.txt
+
+venv/
+images/*
+output/*
+!images/.gitkeep
+!output/.gitkeep
