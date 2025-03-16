@@ -1,2 +1,3 @@
-.onnx
-.jpg
+*.onnx
+*.jpg
+*.txt

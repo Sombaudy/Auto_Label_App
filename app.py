@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+import shutil
 import cv2
 import numpy as np
 from PIL import Image
@@ -84,6 +85,7 @@ if model_path and os.path.exists(model_path):
                 # Save results
                 if output_folder and os.path.exists(output_folder):
                     image_name = os.path.basename(selected_image)
+                    image_path = os.path.join(image_folder, image_name)
                     output_image_path = os.path.join(output_folder, image_name)
                     label_file_path = os.path.join(output_folder, f"{os.path.splitext(image_name)[0]}.txt")
 
@@ -93,12 +95,19 @@ if model_path and os.path.exists(model_path):
                         f.write("\n".join(results_text))
 
                     # Save Image & Labels
-                    if st.button("Save Image"):
-                        cv2.imwrite(output_image_path, cv2.cvtColor(annotated_img, cv2.COLOR_RGB2BGR))
-                        st.success(f"Image saved at {output_image_path}")
-
                     if st.button("Save Labels"):
+                        shutil.move(image_path, output_image_path)
+                        #cv2.imwrite(output_image_path, cv2.cvtColor(annotated_img, cv2.COLOR_RGB2BGR)) #writes bbox image
+                        st.success(f"Image saved at {output_image_path}")
                         st.success(f"Labels saved at {label_file_path}")
+
+                    if st.button("Bad Result"):
+                        # Ensure the for_manual folder exists
+                        for_manual_folder = os.path.join(output_folder, "for_manual")
+                        os.makedirs(for_manual_folder, exist_ok=True)
+
+                        shutil.move(image_path, os.path.join(for_manual_folder, image_name))
+                        st.success(f"Moved {image_name} to 'for_manual' folder")
 
                 else:
                     st.error("Please enter a valid output folder path.")
