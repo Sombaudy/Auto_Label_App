@@ -1,4 +1,3 @@
-*.onnx
 *.jpg
 *.txt
 !requirements.txt
