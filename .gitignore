@@ -1,6 +1,7 @@
 *.onnx
 *.jpg
 *.txt
+!requirements.txt
 
 venv/
 images/*

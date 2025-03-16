@@ -10,7 +10,7 @@ from ultralytics import YOLO  # Import YOLO from ultralytics
 # Load YOLO Model using Ultralytics
 @st.cache_resource
 def load_model(model_path):
-    model = YOLO(model_path)  # Load the YOLO model from the provided path
+    model = YOLO(model_path, task='detect')  # Load the YOLO model from the provided path
     return model
 
 # Load the Images
@@ -71,11 +71,11 @@ def main():
     st.title("YOLO ONNX Auto Label App")
 
     # Input for model path
-    model_path = st.text_input("Enter Path to YOLO Model (.onnx or .pt)")
+    model_path = st.text_input("Enter Path to YOLO Model (.onnx or .pt)", "model.onnx")
 
     # Folder input for images
-    image_folder = st.text_input("Enter Path to Image Folder")
-    output_folder = st.text_input("Enter Path to Output Folder")
+    image_folder = st.text_input("Enter Path to Image Folder", "images")
+    output_folder = st.text_input("Enter Path to Output Folder", "output")
 
     # Load model
     if model_path and os.path.exists(model_path):
@@ -103,7 +103,7 @@ def main():
                     annotated_img = draw_bounding_boxes(img_np, detections)
 
                     # Display result
-                    st.image(annotated_img, caption="Detected Objects", use_column_width=True)
+                    st.image(annotated_img, caption="Detected Objects", use_container_width=True)
 
                     # Save results
                     if output_folder and os.path.exists(output_folder):
@@ -163,7 +163,7 @@ def main():
             st.error("Please enter a valid image folder path.")
 
 
-if 'finished' in st.session_state and st.session_state['fininshed']:
+if 'finished' in st.session_state and st.session_state['finished']:
     st.title("Finished labeling!")
 else:
     main()
