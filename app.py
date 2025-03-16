@@ -6,6 +6,7 @@ import numpy as np
 from PIL import Image
 from ultralytics import YOLO  # Import YOLO from ultralytics
 
+
 # Load YOLO Model using Ultralytics
 @st.cache_resource
 def load_model(model_path):
@@ -65,88 +66,104 @@ def draw_bounding_boxes(img, detections):
         cv2.putText(img, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
     return img
 
-# Streamlit UI
-st.title("YOLO ONNX Auto Label App")
+def main():
+    # Streamlit UI
+    st.title("YOLO ONNX Auto Label App")
 
-# Input for model path
-model_path = st.text_input("Enter Path to YOLO Model (.onnx or .pt)")
+    # Input for model path
+    model_path = st.text_input("Enter Path to YOLO Model (.onnx or .pt)")
 
-# Folder input for images
-image_folder = st.text_input("Enter Path to Image Folder")
-output_folder = st.text_input("Enter Path to Output Folder")
+    # Folder input for images
+    image_folder = st.text_input("Enter Path to Image Folder")
+    output_folder = st.text_input("Enter Path to Output Folder")
 
-# Load model
-if model_path and os.path.exists(model_path):
-    model = load_model(model_path)  # Load the model using the ultralytics YOLO class
-    st.success("Model loaded successfully!")
+    # Load model
+    if model_path and os.path.exists(model_path):
+        model = load_model(model_path)  # Load the model using the ultralytics YOLO class
+        st.success("Model loaded successfully!")
 
-    # Load images from folder
-    if image_folder and os.path.exists(image_folder):
-        image_paths = load_images(image_folder)
-        if 'image_idx' not in st.session_state:
-            st.session_state['image_idx'] = 0
+        # Load images from folder
+        if image_folder and os.path.exists(image_folder):
+            image_paths = load_images(image_folder)
+            if 'image_idx' not in st.session_state:
+                st.session_state['image_idx'] = 0
 
-        if image_paths:
-            selected_image = image_paths[st.session_state['image_idx']]
+            if image_paths:
+                selected_image = image_paths[st.session_state['image_idx']]
 
-            if selected_image:
-                img = Image.open(selected_image).convert("RGB")
-                img_np = np.array(img)
+                if selected_image:
+                    img = Image.open(selected_image).convert("RGB")
+                    img_np = np.array(img)
 
-                # Preprocess and run inference
-                results = model(selected_image)  # Run inference using Ultralytics YOLO
-                detections = process_yolo_output(results, img_np.shape)  # Process the results
+                    # Preprocess and run inference
+                    results = model(selected_image)  # Run inference using Ultralytics YOLO
+                    detections = process_yolo_output(results, img_np.shape)  # Process the results
 
-                # Draw bounding boxes
-                annotated_img = draw_bounding_boxes(img_np, detections)
+                    # Draw bounding boxes
+                    annotated_img = draw_bounding_boxes(img_np, detections)
 
-                # Display result
-                st.image(annotated_img, caption="Detected Objects", use_column_width=True)
+                    # Display result
+                    st.image(annotated_img, caption="Detected Objects", use_column_width=True)
 
-                # Save results
-                if output_folder and os.path.exists(output_folder):
-                    image_name = os.path.basename(selected_image)
-                    image_path = os.path.join(image_folder, image_name)
+                    # Save results
+                    if output_folder and os.path.exists(output_folder):
+                        image_name = os.path.basename(selected_image)
+                        image_path = os.path.join(image_folder, image_name)
 
-                    # Create subdirectories for images and labels
-                    images_output_folder = os.path.join(output_folder, "images")
-                    labels_output_folder = os.path.join(output_folder, "labels")
+                        # Create subdirectories for images and labels
+                        images_output_folder = os.path.join(output_folder, "images")
+                        labels_output_folder = os.path.join(output_folder, "labels")
 
-                    # Ensure these directories exist
-                    os.makedirs(images_output_folder, exist_ok=True)
-                    os.makedirs(labels_output_folder, exist_ok=True)
+                        # Ensure these directories exist
+                        os.makedirs(images_output_folder, exist_ok=True)
+                        os.makedirs(labels_output_folder, exist_ok=True)
 
-                    # Updated paths to save the image and labels
-                    output_image_path = os.path.join(images_output_folder, image_name)
-                    label_file_path = os.path.join(labels_output_folder, f"{os.path.splitext(image_name)[0]}.txt")
+                        # Updated paths to save the image and labels
+                        output_image_path = os.path.join(images_output_folder, image_name)
+                        label_file_path = os.path.join(labels_output_folder, f"{os.path.splitext(image_name)[0]}.txt")
 
-                    # Save detections
-                    #results_text = [f"Class {d[5]}: {d[4]:.2f}" for d in detections]
-                    #with open(label_file_path, "w") as f:
-                    #    f.write("\n".join(results_text))
+                        # Save detections
+                        #results_text = [f"Class {d[5]}: {d[4]:.2f}" for d in detections]
+                        #with open(label_file_path, "w") as f:
+                        #    f.write("\n".join(results_text))
 
-                    # Save Image & Labels
-                    if st.button("Save Labels"):
-                        shutil.move(image_path, output_image_path)
-                        #cv2.imwrite(output_image_path, cv2.cvtColor(annotated_img, cv2.COLOR_RGB2BGR)) #writes bbox image
-                        st.success(f"Image saved at {output_image_path}")
-                        st.success(f"Labels saved at {label_file_path}")
-                        save_labels(detections, label_file_path, img.width, img.height)
-                        st.session_state['image_idx'] += 1
+                        # Save Image & Labels
+                        _, left_btn, right_btn, _ = st.columns([1, 1, 1, 1])
+                        with left_btn:
+                            save = st.button("Save Labels")
+                        with right_btn:
+                            bad = st.button("Bad Result")
 
-                    if st.button("Bad Result"):
-                        # Ensure the for_manual folder exists
-                        for_manual_folder = os.path.join(output_folder, "for_manual")
-                        os.makedirs(for_manual_folder, exist_ok=True)
+                        if save:
+                            shutil.move(image_path, output_image_path)
+                            #cv2.imwrite(output_image_path, cv2.cvtColor(annotated_img, cv2.COLOR_RGB2BGR)) #writes bbox image
+                            save_labels(detections, label_file_path, img.width, img.height)
 
-                        shutil.move(image_path, os.path.join(for_manual_folder, image_name))
-                        st.success(f"Moved {image_name} to 'for_manual' folder")
-                        st.session_state['image_idx'] += 1
+                            st.success(f"Image saved at {output_image_path}")
+                            st.success(f"Labels saved at {label_file_path}")
+                            st.session_state['image_idx'] += 1
+                        if bad:
+                            # Ensure the for_manual folder exists
+                            for_manual_folder = os.path.join(output_folder, "for_manual")
+                            os.makedirs(for_manual_folder, exist_ok=True)
 
-                else:
-                    st.error("Please enter a valid output folder path.")
+                            shutil.move(image_path, os.path.join(for_manual_folder, image_name))
+                            st.success(f"Moved {image_name} to 'for_manual' folder")
+                            st.session_state['image_idx'] += 1
 
+                        if st.session_state['image_idx'] >= len(image_paths):
+                            st.session_state['finished'] = True
+
+                    else:
+                        st.error("Please enter a valid output folder path.")
+
+            else:
+                st.error("No valid images found in the provided folder.")
         else:
-            st.error("No valid images found in the provided folder.")
-    else:
-        st.error("Please enter a valid image folder path.")
+            st.error("Please enter a valid image folder path.")
+
+
+if 'finished' in st.session_state and st.session_state['fininshed']:
+    st.title("Finished labeling!")
+else:
+    main()
