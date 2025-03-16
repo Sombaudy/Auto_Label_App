@@ -1,6 +1,6 @@
-streamlit
-opencv-python
 numpy
-Pillow
-ultralytics 
 onnx
+opencv-python
+Pillow
+streamlit
+ultralytics 
