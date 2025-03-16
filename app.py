@@ -19,9 +19,9 @@ def preprocess_image(img):
     img = np.expand_dims(img, axis=0)  # Add batch dimension
     return img
 
-# Process YOLO Output to Bounding Boxes
+# Process YOLO Output to Bounding Boxes (Only Class 0)
 def process_yolo_output(results, img_shape, conf_threshold=0.5):
-    """ Process YOLO model output and convert to bounding boxes. """
+    """ Process YOLO model output and convert to bounding boxes for class 0 only. """
     h, w, _ = img_shape
     detections = []
     
@@ -32,11 +32,23 @@ def process_yolo_output(results, img_shape, conf_threshold=0.5):
         class_ids = result.boxes.cls.cpu().numpy()  # Class IDs
         
         for i, confidence in enumerate(confidences):
-            if confidence > conf_threshold:
+            if confidence > conf_threshold and class_ids[i] == 0:  # Only include class 0
                 x1, y1, x2, y2 = boxes[i]
                 detections.append((int(x1), int(y1), int(x2), int(y2), confidence, int(class_ids[i])))
     
     return detections
+
+# Function to save labels in YOLO format
+def save_labels(detections, label_file_path, img_width, img_height):
+    with open(label_file_path, "w") as f:
+        for _, _, _, _, confidence, class_id in detections:
+            # Calculate normalized coordinates and dimensions
+            x_center = (_ + _ + _)/2 / img_width  # Normalize x_center
+            y_center = (_ + _ + _)/2 / img_height  # Normalize y_center
+            width = _ / img_width  # Normalize width
+            height = _ / img_height  # Normalize height
+            # Write in YOLO format
+            f.write(f"{class_id} {x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f}\n")
 
 # Draw Bounding Boxes on Image
 def draw_bounding_boxes(img, detections):
@@ -86,13 +98,23 @@ if model_path and os.path.exists(model_path):
                 if output_folder and os.path.exists(output_folder):
                     image_name = os.path.basename(selected_image)
                     image_path = os.path.join(image_folder, image_name)
-                    output_image_path = os.path.join(output_folder, image_name)
-                    label_file_path = os.path.join(output_folder, f"{os.path.splitext(image_name)[0]}.txt")
+
+                    # Create subdirectories for images and labels
+                    images_output_folder = os.path.join(output_folder, "images")
+                    labels_output_folder = os.path.join(output_folder, "labels")
+
+                    # Ensure these directories exist
+                    os.makedirs(images_output_folder, exist_ok=True)
+                    os.makedirs(labels_output_folder, exist_ok=True)
+
+                    # Updated paths to save the image and labels
+                    output_image_path = os.path.join(images_output_folder, image_name)
+                    label_file_path = os.path.join(labels_output_folder, f"{os.path.splitext(image_name)[0]}.txt")
 
                     # Save detections
-                    results_text = [f"Class {d[5]}: {d[4]:.2f}" for d in detections]
-                    with open(label_file_path, "w") as f:
-                        f.write("\n".join(results_text))
+                    #results_text = [f"Class {d[5]}: {d[4]:.2f}" for d in detections]
+                    #with open(label_file_path, "w") as f:
+                    #    f.write("\n".join(results_text))
 
                     # Save Image & Labels
                     if st.button("Save Labels"):
@@ -100,6 +122,7 @@ if model_path and os.path.exists(model_path):
                         #cv2.imwrite(output_image_path, cv2.cvtColor(annotated_img, cv2.COLOR_RGB2BGR)) #writes bbox image
                         st.success(f"Image saved at {output_image_path}")
                         st.success(f"Labels saved at {label_file_path}")
+                        save_labels(detections, label_file_path, img.width, img.height)
 
                     if st.button("Bad Result"):
                         # Ensure the for_manual folder exists
